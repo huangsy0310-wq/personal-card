@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>柏涵 · 个人名片</title>
+<style>
+  /* ============================================================
+     配色系统：日间 / 夜间 通过 CSS 变量切换
+  ============================================================ */
+  :root {
+    --sky-top:   #6ec6e8;
+    --sky-mid:   #a8e0f0;
+    --sky-bot:   #dff2e8;
+    --panel:     #f6e7bd;
+    --panel-edge:#e9d5a4;
+    --ink:       #3a2a16;
+    --ink-soft:  #6a5236;
+    --wood-dark: #3a2413;
+    --wood-mid:  #6b4226;
+    --wood-light:#a06a35;
+    --wood-hi:   #d9a95c;
+    --rivet:     #c9a86a;
+    --btn-face:  #b07a3c;
+    --tag-bg:    #e8d5a0;
+    --portrait:  #cfeef4;
+    --seg-off:   #d9c39a;
+    --shadow:    rgba(0,0,0,.18);
+  }
+  body.night {
+    --sky-top:   #0b1230;
+    --sky-mid:   #1a2350;
+    --sky-bot:   #2a3a5e;
+    --panel:     #2c2c3e;
+    --panel-edge:#232333;
+    --ink:       #ece2c8;
+    --ink-soft:  #b8b0a0;
+    --wood-dark: #17110a;
+    --wood-mid:  #3a2a18;
+    --wood-light:#5a4226;
+    --wood-hi:   #8a6a3a;
+    --rivet:     #7a6a4a;
+    --btn-face:  #5a4226;
+    --tag-bg:    #33333f;
+    --portrait:  #1c2740;
+    --seg-off:   #3d3a44;
+    --shadow:    rgba(0,0,0,.5);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; overflow-x:hidden; }
+
+  body {
+    font-family: "Courier New", "Lucida Console", Menlo, monospace;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-bot) 100%);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 90px 14px 60px;
+    position: relative;
+    transition: background .4s ease, color .4s ease;
+  }
+  svg { image-rendering: pixelated; shape-rendering: crispEdges; }
+
+  /* ============================================================
+     背景装饰层（全部不挡点击）
+  ============================================================ */
+  .decor { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+
+  .sun, .moon-sky { position: absolute; top: 34px; left: 6%; transition: opacity .5s ease; }
+  .sun { width: 66px; height: 66px; }
+  .moon-sky { width: 54px; height: 54px; opacity: 0; }
+
+  .cloud { position: absolute; opacity: .95; animation: drift 14s ease-in-out infinite alternate; }
+  .cloud.c1 { width: 96px; top: 16%; left: 10%; }
+  .cloud.c2 { width: 72px; top: 9%;  right: 18%; animation-duration: 18s; }
+  .cloud.c3 { width: 84px; top: 30%; right: 6%;  animation-duration: 12s; }
+  .cloud.c4 { width: 70px; top: 40%; left: 4%;  animation-duration: 16s; }
+
+  .stars { position: absolute; inset: 0; opacity: 0; transition: opacity .5s ease; }
+  .star { position: absolute; animation: twinkle 3s ease-in-out infinite; }
+
+  .ground { position: absolute; left: 0; right: 0; bottom: 4px; text-align: center; }
+  .ground .sprout { display: inline-block; width: 22px; height: 22px; margin: 0 14px; opacity: .9; }
+
+  /* 大树（左右两侧，桌面端显示，手机端隐藏以保持清爽） */
+  .tree { position: absolute; bottom: 0; width: 92px; height: 110px; }
+  .tree.tl { left: -4px; }
+  .tree.tr { right: -4px; }
+
+  /* 蝴蝶 / 飞鸟 / 飘落花瓣 */
+  .butterfly { position: absolute; animation: flutter 7s ease-in-out infinite alternate; }
+  .butterfly.b1 { left: 13%; top: 42%; }
+  .butterfly.b2 { left: 74%; top: 24%; animation-delay: 1.5s; }
+  .butterfly.b3 { left: 42%; top: 66%; animation-delay: 3s; }
+
+  .bird { position: absolute; top: 18%; animation: fly 22s linear infinite; }
+  .bird.b1 { animation-delay: 4s; }
+
+  .petal { position: absolute; top: -10px; animation: fall linear infinite; }
+
+  @keyframes drift { from { transform: translateX(0); } to { transform: translateX(46px); } }
+  @keyframes twinkle { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+  @keyframes flutter {
+    0% { transform: translate(0,0); }
+    25% { transform: translate(22px,-16px); }
+    50% { transform: translate(-8px,-26px); }
+    75% { transform: translate(-22px,-8px); }
+    100% { transform: translate(10px,-18px); }
+  }
+  @keyframes fly { 0% { transform: translateX(-50px); } 100% { transform: translateX(110vw); } }
+  @keyframes fall {
+    0% { transform: translateY(-20px) translateX(0); opacity: 0; }
+    10% { opacity: 1; }
+    100% { transform: translateY(108vh) translateX(46px); opacity: .55; }
+  }
+
+  /* 日夜切换显示控制 */
+  body.night .sun, body.night .cloud, body.night .bird, body.night .butterfly, body.night .petal { opacity: 0; }
+  body.night .moon-sky { opacity: 1; }
+  body.night .stars { opacity: 1; }
+
+  /* 手机端隐藏大树 */
+  @media (max-width: 760px) { .tree { display: none; } }
+
+  /* ============================================================
+     右上角控制区：音乐 + 日夜切换
+  ============================================================ */
+  #topRight { position: fixed; top: 16px; right: 16px; z-index: 30; display: flex; gap: 8px; align-items: center; }
+
+  #themeToggle {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: inherit; font-size: 13px; letter-spacing: 1px;
+    color: #fdf3d8; cursor: pointer;
+    background: var(--btn-face); border: 3px solid var(--wood-dark);
+    box-shadow: inset 3px 3px 0 var(--wood-hi), inset -3px -3px 0 var(--wood-mid), 3px 3px 0 var(--shadow);
+    padding: 8px 12px; image-rendering: pixelated;
+  }
+  #themeToggle:hover { filter: brightness(1.15); }
+  #themeToggle:active { box-shadow: inset -3px -3px 0 var(--wood-hi), inset 3px 3px 0 var(--wood-mid); }
+  #themeToggle .ic { width: 14px; height: 14px; }
+  #themeToggle .ic-night { display: none; }
+  body.night #themeToggle .ic-sun { display: none; }
+  body.night #themeToggle .ic-night { display: inline-block; }
+
+  #musicBtn {
+    width: 40px; height: 40px; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--btn-face); border: 3px solid var(--wood-dark);
+    box-shadow: inset 3px 3px 0 var(--wood-hi), inset -3px -3px 0 var(--wood-mid), 3px 3px 0 var(--shadow);
+    cursor: pointer; image-rendering: pixelated;
+  }
+  #musicBtn:hover { filter: brightness(1.15); }
+  #musicBtn .ic { width: 20px; height: 20px; }
+  body.music-on #musicBtn { background: #5aa24a; }
+  body.music-on #musicBtn .ic { animation: noteBob 1.1s ease-in-out infinite; }
+  @keyframes noteBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+
+  /* ============================================================
+     名片卡片
+  ============================================================ */
+  .card {
+    position: relative; z-index: 10;
+    width: min(92vw, 560px);
+    background: var(--wood-dark); padding: 6px; border: 2px solid var(--wood-dark);
+    box-shadow: 8px 8px 0 var(--shadow); image-rendering: pixelated;
+  }
+  .card-wood {
+    background-image: repeating-linear-gradient(90deg,
+      var(--wood-mid) 0 8px, var(--wood-light) 8px 14px, var(--wood-mid) 14px 22px);
+    padding: 5px;
+  }
+  .card-panel {
+    background: var(--panel); border: 2px solid var(--panel-edge);
+    padding: 24px 18px 26px; text-align: center; position: relative;
+    transition: background .4s ease;
+  }
+
+  .rivet {
+    position: absolute; width: 12px; height: 12px;
+    background: var(--rivet);
+    box-shadow: inset 2px 2px 0 #f0e0b8, inset -2px -2px 0 #8a6a40;
+    image-rendering: pixelated;
+  }
+  .rivet.tl { top: 2px; left: 2px; }
+  .rivet.tr { top: 2px; right: 2px; }
+  .rivet.bl { bottom: 2px; left: 2px; }
+  .rivet.br { bottom: 2px; right: 2px; }
+
+  .titlebar {
+    display: inline-block;
+    background: var(--wood-light); border: 2px solid var(--wood-dark);
+    box-shadow: inset 2px 2px 0 var(--wood-hi), inset -2px -2px 0 var(--wood-mid);
+    color: #fdf3d8; letter-spacing: 3px; font-size: 14px;
+    padding: 5px 14px; margin-bottom: 18px; image-rendering: pixelated;
+  }
+
+  .portrait {
+    width: 116px; height: 146px; margin: 0; flex: 0 0 auto;
+    background: var(--portrait); border: 4px solid var(--wood-dark);
+    box-shadow: inset 3px 3px 0 var(--wood-mid);
+    display: flex; align-items: flex-end; justify-content: center;
+    overflow: hidden; image-rendering: pixelated; transition: background .4s ease;
+  }
+  #avatar svg { display: block; width: 108px; height: 138px; image-rendering: pixelated; }
+
+  .name {
+    font-size: clamp(26px, 7vw, 34px); font-weight: bold;
+    letter-spacing: 5px; color: var(--ink);
+    text-shadow: 2px 2px 0 var(--wood-hi); margin-bottom: 10px;
+  }
+  .intro { font-size: 14px; line-height: 1.7; color: var(--ink-soft); margin-bottom: 8px; }
+
+  .tags { display: flex; gap: 10px; justify-content: flex-start; flex-wrap: wrap; }
+  .tag {
+    font-size: 13px; letter-spacing: 1px; padding: 6px 13px; color: var(--ink);
+    background: var(--tag-bg); border: 3px solid var(--wood-mid);
+    box-shadow: inset 2px 2px 0 var(--wood-hi), inset -2px -2px 0 var(--wood-mid);
+    image-rendering: pixelated;
+  }
+
+  /* 横向布局：头像在左，文字在右 */
+  .card-body { display: flex; align-items: center; gap: 20px; }
+  .card-info { flex: 1; min-width: 0; text-align: left; }
+
+  /* 「兴趣爱好」分割线 */
+  .divider {
+    display: flex; align-items: center; gap: 8px;
+    margin: 10px 0 12px;
+    color: var(--ink-soft); font-size: 12px; letter-spacing: 2px;
+  }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 2px; background: var(--wood-mid); }
+
+  @media (max-width: 480px) {
+    .card-body { flex-direction: column; }
+    .card-info { text-align: center; }
+    .tags { justify-content: center; }
+  }
+
+  /* ============================================================
+     农场日历状态栏（季节 / 天气 / 时间）
+  ============================================================ */
+  .farmbar {
+    position: relative; z-index: 10; margin-top: 20px;
+    display: flex;
+    background: var(--wood-dark); padding: 4px; border: 2px solid var(--wood-dark);
+    box-shadow: 6px 6px 0 var(--shadow); image-rendering: pixelated;
+  }
+  .fb-cell {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 7px 15px; min-width: 64px;
+    background: var(--panel); border: 2px solid var(--panel-edge);
+    transition: background .4s ease;
+  }
+  .fb-cell + .fb-cell { border-left: none; }
+  .fb-k { font-size: 11px; letter-spacing: 2px; color: var(--ink-soft); }
+  .fb-v { font-size: 14px; font-weight: bold; letter-spacing: 1px; color: var(--ink); }
+
+  /* ============================================================
+     卡片下方按钮组
+  ============================================================ */
+  .btn-row { position: relative; z-index: 10; margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .menu-btn {
+    font-family: inherit; font-size: 14px; letter-spacing: 3px;
+    color: #fdf3d8; cursor: pointer;
+    background: var(--btn-face); border: 3px solid var(--wood-dark);
+    box-shadow: inset 3px 3px 0 var(--wood-hi), inset -3px -3px 0 var(--wood-mid), 3px 3px 0 var(--shadow);
+    padding: 10px 20px; image-rendering: pixelated;
+  }
+  .menu-btn:hover { filter: brightness(1.15); }
+  .menu-btn:active { box-shadow: inset -3px -3px 0 var(--wood-hi), inset 3px 3px 0 var(--wood-mid); }
+  .menu-btn.small { font-size: 12px; letter-spacing: 2px; padding: 7px 14px; }
+
+  /* ============================================================
+     弹窗（技能/关于我/联系我/日记共用）
+  ============================================================ */
+  .modal { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; }
+  .modal[hidden] { display: none; }
+  .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.55); }
+  .modal-window {
+    position: relative; z-index: 1;
+    width: min(92vw, 440px); max-height: 86vh; overflow-y: auto;
+    background: var(--wood-dark); padding: 6px; border: 2px solid var(--wood-dark);
+    box-shadow: 8px 8px 0 var(--shadow); image-rendering: pixelated;
+    animation: pop .18s ease-out;
+  }
+  .modal-wood {
+    background-image: repeating-linear-gradient(90deg,
+      var(--wood-mid) 0 8px, var(--wood-light) 8px 14px, var(--wood-mid) 14px 22px);
+    padding: 5px;
+  }
+  .modal-panel {
+    background: var(--panel); border: 2px solid var(--panel-edge);
+    padding: 14px 16px 18px; transition: background .4s ease;
+  }
+  .modal-titlebar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--wood-light); border: 2px solid var(--wood-dark);
+    box-shadow: inset 2px 2px 0 var(--wood-hi), inset -2px -2px 0 var(--wood-mid);
+    color: #fdf3d8; letter-spacing: 3px; font-size: 14px;
+    padding: 6px 8px 6px 14px; margin-bottom: 16px;
+  }
+  .close-btn {
+    font-family: inherit; font-size: 15px; line-height: 1;
+    width: 26px; height: 26px; cursor: pointer; color: #fdf3d8;
+    background: var(--btn-face); border: 2px solid var(--wood-dark);
+    box-shadow: inset 2px 2px 0 var(--wood-hi), inset -2px -2px 0 var(--wood-mid);
+    display: flex; align-items: center; justify-content: center; image-rendering: pixelated;
+  }
+  .close-btn:hover { filter: brightness(1.15); }
+  @keyframes pop { from { transform: scale(.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  /* 技能条目 */
+  .skill-list { list-style: none; display: flex; flex-direction: column; gap: 15px; }
+  .skill { display: flex; align-items: center; gap: 10px; }
+  .sk-ic { width: 20px; height: 20px; flex: 0 0 auto; }
+  .sk-name { font-size: 14px; letter-spacing: 1px; color: var(--ink); width: 40px; flex: 0 0 auto; }
+  .sk-bar { flex: 1; height: 16px; display: flex; gap: 2px; }
+  .seg { flex: 1; background: var(--seg-off); box-shadow: inset 1px 1px 0 rgba(0,0,0,.15); image-rendering: pixelated; }
+  .seg.on { background: #d8483c; box-shadow: inset 1px 1px 0 #f08a7a, inset -1px -1px 0 #8a2a1e; }
+  .sk-max { flex: 1; height: 100%; background: #f6c244; box-shadow: inset 1px 1px 0 #ffe89a, inset -1px -1px 0 #c89a2a; image-rendering: pixelated; }
+  .sk-lv { flex: 0 0 auto; min-width: 34px; text-align: right; font-size: 13px; font-weight: bold; letter-spacing: 1px; color: var(--ink); }
+  .sk-lv.max { color: #f6c244; }
+
+  /* 关于我 */
+  .about-body { display: flex; flex-direction: column; gap: 14px; text-align: left; }
+  .about-item { font-size: 13px; line-height: 1.8; color: var(--ink-soft); }
+  .about-tag {
+    display: inline-block; min-width: 52px; margin-right: 8px; padding: 2px 6px;
+    font-size: 12px; letter-spacing: 2px; color: #fdf3d8; text-align: center;
+    background: var(--wood-light); border: 2px solid var(--wood-dark); box-shadow: inset 1px 1px 0 var(--wood-hi);
+  }
+
+  /* 联系我 */
+  .contact-body { text-align: center; padding: 6px 4px; }
+  .mail-ic { width: 44px; height: 33px; display: block; margin: 0 auto 12px; }
+  .contact-mail { font-size: 15px; font-weight: bold; color: var(--ink); letter-spacing: 1px; margin-bottom: 6px; word-break: break-all; }
+  .contact-note { font-size: 12px; color: var(--ink-soft); margin-bottom: 16px; }
+
+  /* 农场日记 */
+  .diary-add { display: flex; gap: 8px; margin-bottom: 16px; }
+  #diaryInput {
+    flex: 1; min-width: 0; font-family: inherit; font-size: 13px; color: var(--ink);
+    background: var(--panel-edge); border: 3px solid var(--wood-mid);
+    box-shadow: inset 2px 2px 0 rgba(0,0,0,.15); padding: 8px 10px; outline: none;
+  }
+  #diaryInput::placeholder { color: var(--ink-soft); }
+  .diary-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .diary-item { display: flex; align-items: center; gap: 9px; }
+  .diary-item .chk {
+    width: 20px; height: 20px; flex: 0 0 auto; cursor: pointer;
+    background: var(--panel-edge); border: 3px solid var(--wood-mid);
+    box-shadow: inset 2px 2px 0 rgba(0,0,0,.15); image-rendering: pixelated;
+    display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: bold;
+  }
+  .diary-item.done .chk { background: #5aa24a; }
+  .diary-item.done .chk::after { content: '✓'; }
+  .diary-item .dtxt { flex: 1; font-size: 13px; color: var(--ink); word-break: break-word; }
+  .diary-item.done .dtxt { text-decoration: line-through; color: var(--ink-soft); }
+  .diary-item .del {
+    flex: 0 0 auto; width: 22px; height: 22px; cursor: pointer;
+    font-family: inherit; font-size: 14px; color: #fdf3d8;
+    background: var(--btn-face); border: 2px solid var(--wood-dark);
+    box-shadow: inset 2px 2px 0 var(--wood-hi), inset -2px -2px 0 var(--wood-mid);
+    display: flex; align-items: center; justify-content: center; image-rendering: pixelated;
+  }
+  .diary-item .del:hover { filter: brightness(1.15); }
+  .diary-empty { font-size: 12px; color: var(--ink-soft); text-align: center; }
+</style>
+</head>
+<body>
+
+  <!-- ================= 像素装饰元件定义（内联 SVG，无外部资源） ================= -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <symbol id="i-sun" viewBox="0 0 20 20">
+        <g fill="#ffd54a">
+          <rect x="6" y="6" width="8" height="8"/>
+          <rect x="9" y="0" width="2" height="4"/><rect x="9" y="16" width="2" height="4"/>
+          <rect x="0" y="9" width="4" height="2"/><rect x="16" y="9" width="4" height="2"/>
+          <rect x="2" y="2" width="4" height="4"/><rect x="14" y="2" width="4" height="4"/>
+          <rect x="2" y="14" width="4" height="4"/><rect x="14" y="14" width="4" height="4"/>
+        </g>
+      </symbol>
+      <symbol id="i-moon" viewBox="0 0 16 16">
+        <g fill="#f6f0c8">
+          <rect x="4" y="0" width="8" height="3"/><rect x="2" y="3" width="12" height="3"/>
+          <rect x="1" y="6" width="14" height="4"/><rect x="2" y="10" width="12" height="3"/>
+          <rect x="4" y="13" width="8" height="3"/>
+        </g>
+      </symbol>
+      <symbol id="i-star" viewBox="0 0 12 12">
+        <path d="M6 0 L7.4 4.6 L12 6 L7.4 7.4 L6 12 L4.6 7.4 L0 6 L4.6 4.6 Z" fill="#fff"/>
+      </symbol>
+      <symbol id="i-cloud" viewBox="0 0 44 20">
+        <g fill="#ffffff">
+          <rect x="10" y="0" width="24" height="4"/><rect x="6" y="4" width="32" height="4"/>
+          <rect x="2" y="8" width="40" height="4"/>
+        </g>
+        <rect x="0" y="12" width="44" height="4" fill="#e6f0f8"/>
+        <rect x="0" y="16" width="44" height="4" fill="#d3e4f0"/>
+      </symbol>
+      <symbol id="i-sprout" viewBox="0 0 16 16">
+        <rect x="7" y="4" width="2" height="10" fill="#3f7d33"/>
+        <rect x="2" y="4" width="5" height="2" fill="#5aa24a"/><rect x="1" y="2" width="2" height="2" fill="#4a8a3a"/>
+        <rect x="9" y="4" width="5" height="2" fill="#5aa24a"/><rect x="13" y="2" width="2" height="2" fill="#4a8a3a"/>
+      </symbol>
+
+      <!-- 大树 -->
+      <symbol id="i-tree" viewBox="0 0 40 48">
+        <rect x="17" y="30" width="6" height="18" fill="#6b4226"/>
+        <rect x="15" y="33" width="10" height="3" fill="#5a3520"/>
+        <rect x="12" y="6" width="16" height="4" fill="#5aa24a"/>
+        <rect x="8" y="10" width="24" height="5" fill="#4a8a3a"/>
+        <rect x="5" y="15" width="30" height="6" fill="#3f7d33"/>
+        <rect x="4" y="21" width="32" height="6" fill="#4a8a3a"/>
+        <rect x="7" y="27" width="26" height="4" fill="#3f7d33"/>
+      </symbol>
+      <!-- 蝴蝶（可换色） -->
+      <symbol id="i-butterfly" viewBox="0 0 16 12">
+        <rect x="0" y="2" width="5" height="4"/><rect x="0" y="6" width="4" height="3"/>
+        <rect x="11" y="2" width="5" height="4"/><rect x="12" y="6" width="4" height="3"/>
+        <rect x="7" y="2" width="2" height="8"/>
+        <rect x="6" y="1" width="1" height="2"/><rect x="9" y="1" width="1" height="2"/>
+      </symbol>
+      <!-- 飞鸟 -->
+      <symbol id="i-bird" viewBox="0 0 12 6">
+        <rect x="1" y="1" width="2" height="2"/><rect x="3" y="3" width="2" height="2"/>
+        <rect x="5" y="5" width="2" height="1"/><rect x="7" y="3" width="2" height="2"/><rect x="9" y="1" width="2" height="2"/>
+      </symbol>
+
+      <!-- 技能图标 -->
+      <symbol id="i-note" viewBox="0 0 16 16">
+        <g fill="#f6c244">
+          <rect x="5" y="11" width="4" height="4"/><rect x="8" y="4" width="1" height="7"/>
+          <rect x="9" y="4" width="3" height="1"/><rect x="11" y="5" width="2" height="1"/><rect x="10" y="6" width="2" height="1"/>
+        </g>
+      </symbol>
+      <symbol id="i-ball" viewBox="0 0 16 16">
+        <g fill="#f08a3a">
+          <rect x="4" y="1" width="8" height="2"/><rect x="2" y="3" width="12" height="2"/>
+          <rect x="1" y="5" width="14" height="6"/><rect x="2" y="11" width="12" height="2"/><rect x="4" y="13" width="8" height="2"/>
+        </g>
+        <g fill="#ffffff"><rect x="7" y="3" width="2" height="10"/><rect x="3" y="7" width="10" height="2"/></g>
+      </symbol>
+      <symbol id="i-pencil" viewBox="0 0 16 16">
+        <rect x="2" y="6" width="3" height="4" fill="#f6c244"/><rect x="5" y="6" width="2" height="4" fill="#c9a86a"/>
+        <rect x="7" y="6" width="6" height="4" fill="#9b6bd0"/>
+        <rect x="13" y="7" width="2" height="2" fill="#f6d4a6"/><rect x="14" y="7" width="1" height="2" fill="#2b1b12"/>
+      </symbol>
+      <symbol id="i-pi" viewBox="0 0 16 16">
+        <g fill="#5aa0e0"><rect x="3" y="2" width="10" height="2"/><rect x="4" y="4" width="2" height="9"/><rect x="10" y="4" width="2" height="9"/></g>
+      </symbol>
+      <symbol id="i-a" viewBox="0 0 16 16">
+        <g fill="#5aa24a"><rect x="5" y="2" width="6" height="2"/><rect x="4" y="4" width="2" height="9"/><rect x="10" y="4" width="2" height="9"/><rect x="5" y="8" width="6" height="2"/></g>
+      </symbol>
+      <symbol id="i-code" viewBox="0 0 16 16">
+        <rect x="1" y="2" width="14" height="12" fill="#3ab0b0"/>
+        <g fill="#123333">
+          <rect x="3" y="4" width="2" height="2"/><rect x="6" y="4" width="2" height="2"/><rect x="9" y="4" width="2" height="2"/>
+          <rect x="3" y="9" width="2" height="2"/><rect x="5" y="10" width="2" height="2"/><rect x="3" y="11" width="2" height="2"/>
+        </g>
+      </symbol>
+      <symbol id="i-mail" viewBox="0 0 16 12">
+        <rect x="0" y="0" width="16" height="12" fill="#f6c244"/>
+        <rect x="0" y="0" width="16" height="2" fill="#e0a83a"/>
+        <polygon points="0,1 8,8 16,1" fill="#ffffff"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <!-- ================= 背景装饰 ================= -->
+  <div class="decor">
+    <svg class="sun"><use href="#i-sun"/></svg>
+    <svg class="moon-sky"><use href="#i-moon"/></svg>
+    <svg class="cloud c1"><use href="#i-cloud"/></svg>
+    <svg class="cloud c2"><use href="#i-cloud"/></svg>
+    <svg class="cloud c3"><use href="#i-cloud"/></svg>
+    <svg class="cloud c4"><use href="#i-cloud"/></svg>
+    <svg class="bird b1" style="top:16%"><use href="#i-bird" fill="#5a4a3a"/></svg>
+    <svg class="butterfly b1" style="width:22px"><use href="#i-butterfly" fill="#f06a9a"/></svg>
+    <svg class="butterfly b2" style="width:18px"><use href="#i-butterfly" fill="#f6c244"/></svg>
+    <svg class="butterfly b3" style="width:24px"><use href="#i-butterfly" fill="#7ec8e3"/></svg>
+    <div class="stars" id="stars"></div>
+    <div class="ground">
+      <svg class="sprout"><use href="#i-sprout"/></svg>
+      <svg class="sprout"><use href="#i-sprout"/></svg>
+      <svg class="sprout"><use href="#i-sprout"/></svg>
+      <svg class="sprout"><use href="#i-sprout"/></svg>
+      <svg class="sprout"><use href="#i-sprout"/></svg>
+    </div>
+    <svg class="tree tl"><use href="#i-tree"/></svg>
+    <svg class="tree tr"><use href="#i-tree"/></svg>
+  </div>
+
+  <!-- ================= 右上角控制区 ================= -->
+  <div id="topRight">
+    <button id="musicBtn" aria-label="音乐开关" title="8-bit 音乐">
+      <svg class="ic" viewBox="0 0 16 16"><use href="#i-note"/></svg>
+    </button>
+    <button id="themeToggle" aria-pressed="false" aria-label="切换日间/夜间模式">
+      <svg class="ic ic-sun" viewBox="0 0 20 20"><use href="#i-sun"/></svg>
+      <svg class="ic ic-night" viewBox="0 0 12 12"><use href="#i-star"/></svg>
+      <span class="txt">开启夜晚</span>
+    </button>
+  </div>
+
+  <!-- ================= 名片卡片 ================= -->
+  <main class="card">
+    <span class="rivet tl"></span><span class="rivet tr"></span><span class="rivet bl"></span><span class="rivet br"></span>
+    <div class="card-wood">
+      <div class="card-panel">
+        <div class="titlebar">个 人 名 片</div>
+        <div class="card-body">
+          <div class="portrait"><div id="avatar"></div></div>
+          <div class="card-info">
+            <!-- ===== 下面这几处文字可按需修改 ===== -->
+            <h1 class="name">柏涵</h1>
+            <p class="intro">正在山谷里种下新的种子...</p>
+            <div class="divider"><span>兴趣爱好</span></div>
+            <div class="tags">
+              <span class="tag">排球</span>
+              <span class="tag">电影</span>
+              <span class="tag">手工</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ================= 农场日历状态栏 ================= -->
+  <div class="farmbar">
+    <div class="fb-cell"><span class="fb-k">季 节</span><span class="fb-v" id="fbSeason">—</span></div>
+    <div class="fb-cell"><span class="fb-k">天 气</span><span class="fb-v" id="fbWeather">—</span></div>
+    <div class="fb-cell"><span class="fb-k">时 间</span><span class="fb-v" id="fbTime">--:--</span></div>
+  </div>
+
+  <!-- ================= 卡片下方按钮组 ================= -->
+  <div class="btn-row">
+    <button class="menu-btn" id="skillsBtn">技 能</button>
+    <button class="menu-btn" id="aboutBtn">关于我</button>
+    <button class="menu-btn" id="contactBtn">联系我</button>
+    <button class="menu-btn" id="diaryBtn">日 记</button>
+  </div>
+
+  <!-- ================= 技能弹窗 ================= -->
+  <div class="modal" id="skillsModal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-window">
+      <span class="rivet tl"></span><span class="rivet tr"></span><span class="rivet bl"></span><span class="rivet br"></span>
+      <div class="modal-wood"><div class="modal-panel">
+        <div class="modal-titlebar"><span>技 能</span><button class="close-btn" id="closeSkills" aria-label="关闭">×</button></div>
+        <ul class="skill-list" id="skillList"></ul>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- ================= 关于我弹窗 ================= -->
+  <div class="modal" id="aboutModal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-window">
+      <span class="rivet tl"></span><span class="rivet tr"></span><span class="rivet bl"></span><span class="rivet br"></span>
+      <div class="modal-wood"><div class="modal-panel">
+        <div class="modal-titlebar"><span>关 于 我</span><button class="close-btn" id="closeAbout" aria-label="关闭">×</button></div>
+        <div class="about-body">
+          <p class="about-item"><span class="about-tag">介 绍</span>一名住在山谷里的慢热居民，喜欢把日子过得安静又有趣。</p>
+          <p class="about-item"><span class="about-tag">生 活</span>清晨给窗台的花浇水，傍晚去球场打球，夜里窝在沙发看电影，或者安安静静做点手工。</p>
+          <p class="about-item"><span class="about-tag">爱 好</span>排球、电影、手工 —— 挥汗、入戏、动手，都是我的充电方式。</p>
+          <p class="about-item"><span class="about-tag">喜 欢</span>喜欢下雨天、老电影、刚出炉的面包，也喜欢把零碎的时间拼成喜欢的样子。</p>
+          <p class="about-item"><span class="about-tag">梦 想</span>有一间自己的小屋，种满喜欢的花，做喜欢的手工，把平凡的日子过得闪闪发光。</p>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- ================= 联系我弹窗 ================= -->
+  <div class="modal" id="contactModal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-window">
+      <span class="rivet tl"></span><span class="rivet tr"></span><span class="rivet bl"></span><span class="rivet br"></span>
+      <div class="modal-wood"><div class="modal-panel">
+        <div class="modal-titlebar"><span>联 系 我</span><button class="close-btn" id="closeContact" aria-label="关闭">×</button></div>
+        <div class="contact-body">
+          <svg class="mail-ic"><use href="#i-mail"/></svg>
+          <p class="contact-mail" id="contactMail">hello@baihan.farm</p>
+          <p class="contact-note">（虚拟邮箱，仅作展示）</p>
+          <button class="menu-btn small" id="copyMail">复制邮箱</button>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- ================= 农场日记弹窗 ================= -->
+  <div class="modal" id="diaryModal" hidden>
+    <div class="modal-backdrop"></div>
+    <div class="modal-window">
+      <span class="rivet tl"></span><span class="rivet tr"></span><span class="rivet bl"></span><span class="rivet br"></span>
+      <div class="modal-wood"><div class="modal-panel">
+        <div class="modal-titlebar"><span>农 场 日 记</span><button class="close-btn" id="closeDiary" aria-label="关闭">×</button></div>
+        <div class="diary-add">
+          <input id="diaryInput" type="text" placeholder="写下今天要做的事…" maxlength="40">
+          <button class="menu-btn small" id="diaryAdd">添加</button>
+        </div>
+        <ul class="diary-list" id="diaryList"></ul>
+        <p class="diary-empty" id="diaryEmpty">日记本还是空的，种下一件小事吧。</p>
+      </div></div>
+    </div>
+  </div>
+
+<script>
+  /* ============================================================
+     头像：像素女生小人（双麻花辫）
+  ============================================================ */
+  var AVATAR_MAP = [
+    ".....HHHHHHHH......",
+    "....HHHHHHHHHH....",
+    "....HHHHHHHHHH....",
+    "...HHHHHHHHHHHH...",
+    "HHHHhhhhhhhhhhHHHH",
+    "HhHHSSSSSSSSSSHHhH",
+    "HhHHSWESSSWESSHHhH",
+    "HhHHSEESSSEESSHHhH",
+    "HhHHSSSSSSSSSSHHhH",
+    "HhHHSCSSSSSSCSHHhH",
+    "HhHHSSSSMSSSSSHHhH",
+    "HhHHSSSSSSSSSSHHhH",
+    "HhHHHSSSSSSSSHHHhH",
+    "TTTHHSSSSSSSSHHTTT",
+    ".TT...SSSSSS...TT.",
+    ".T....SSSSSS....T.",
+    "....eeeeeeeeee....",
+    "...eeeeeeeeeeee...",
+    "...DDDDDDDDDDDD...",
+    "..DDDDDDDDDDDDDD..",
+    "..dDDDDDDDDDDDDd..",
+    ".DDDDDDDDDDDDDDDD.",
+    ".dddddddddddddddd."
+  ];
+
+  var AVATAR_PALETTE = {
+    'H': '#6b4423',  // 头发（棕）
+    'h': '#8a5a30',  // 头发高光
+    'T': '#f06a9a',  // 辫子发绳（粉）
+    'S': '#f6d4a6',  // 皮肤
+    'W': '#ffffff',  // 眼睛高光
+    'E': '#2b1b12',  // 眼睛
+    'C': '#f2a0a0',  // 腮红
+    'M': '#c96a6a',  // 嘴巴
+    'e': '#f8b0c0',  // 裙子上衣（浅粉）
+    'D': '#f08aa0',  // 裙子（粉）
+    'd': '#d06080'   // 裙子阴影
+  };
+
+  (function renderAvatar() {
+    var px = 6, w = AVATAR_MAP[0].length * px, h = AVATAR_MAP.length * px, rects = '';
+    for (var y = 0; y < AVATAR_MAP.length; y++)
+      for (var x = 0; x < AVATAR_MAP[y].length; x++) {
+        var ch = AVATAR_MAP[y][x];
+        if (ch !== '.') rects += '<rect x="' + (x*px) + '" y="' + (y*px) + '" width="' + px + '" height="' + px + '" fill="' + AVATAR_PALETTE[ch] + '"/>';
+      }
+    document.getElementById('avatar').innerHTML =
+      '<svg viewBox="0 0 ' + w + ' ' + h + '" shape-rendering="crispEdges">' + rects + '</svg>';
+  })();
+
+  /* ============================================================
+     夜间星空 + 飘落花瓣
+  ============================================================ */
+  (function renderStars() {
+    function rng(seed) { return function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }; }
+    var rand = rng(42), layer = document.getElementById('stars'), NS = 'http://www.w3.org/2000/svg';
+    for (var i = 0; i < 42; i++) {
+      var size = 6 + Math.floor(rand() * 8), svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 12 12'); svg.setAttribute('class', 'star');
+      svg.style.left = (rand() * 100).toFixed(2) + '%'; svg.style.top = (rand() * 62).toFixed(2) + '%';
+      svg.style.width = size + 'px'; svg.style.height = size + 'px';
+      svg.style.animationDelay = (rand() * 3).toFixed(2) + 's';
+      var color = rand() > 0.7 ? '#ffe08a' : '#ffffff';
+      svg.innerHTML = '<path d="M6 0 L7.4 4.6 L12 6 L7.4 7.4 L6 12 L4.6 7.4 L0 6 L4.6 4.6 Z" fill="' + color + '"/>';
+      layer.appendChild(svg);
+    }
+  })();
+
+  (function renderPetals() {
+    function rng(seed) { return function () { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }; }
+    var rand = rng(9), decor = document.querySelector('.decor');
+    var colors = ['#f6a9c0', '#ffffff', '#cfe9a0', '#f6c244'];
+    for (var i = 0; i < 10; i++) {
+      var p = document.createElement('span');
+      p.className = 'petal';
+      p.style.left = (rand() * 100).toFixed(2) + '%';
+      p.style.background = colors[Math.floor(rand() * colors.length)];
+      p.style.animationDuration = (8 + rand() * 8).toFixed(1) + 's';
+      p.style.animationDelay = (-rand() * 12).toFixed(1) + 's';
+      var sz = 5 + Math.floor(rand() * 4);
+      p.style.width = sz + 'px'; p.style.height = sz + 'px';
+      decor.appendChild(p);
+    }
+  })();
+
+  /* ============================================================
+     本地存储
+  ============================================================ */
+  function lsGet(key, def) { try { var v = localStorage.getItem(key); return v === null ? def : JSON.parse(v); } catch (e) { return def; } }
+  function lsSet(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  /* ============================================================
+     技能数据（在这里增删改技能）
+  ============================================================ */
+  var SKILLS = [
+    { name: '乐器', icon: '#i-note',   level: 8 },
+    { name: '体育', icon: '#i-ball',   level: 6 },
+    { name: '写作', icon: '#i-pencil', level: 4 },
+    { name: '数学', icon: '#i-pi',     level: 4 },
+    { name: '英语', icon: '#i-a',      level: 2 },
+    { name: '编程', icon: '#i-code',   level: 1 }
+  ];
+
+  (function renderSkills() {
+    var list = document.getElementById('skillList'), html = '';
+    SKILLS.forEach(function (s) {
+      var bar;
+      if (s.max) {
+        bar = '<div class="sk-bar"><div class="sk-max"></div></div>';
+      } else {
+        var segs = '';
+        for (var i = 1; i <= 10; i++) segs += '<i class="seg' + (i <= s.level ? ' on' : '') + '"></i>';
+        bar = '<div class="sk-bar">' + segs + '</div>';
+      }
+      var lvText = s.max ? '满级' : s.level + '级';
+      html += '<li class="skill"><svg class="sk-ic"><use href="' + s.icon + '"/></svg>' +
+        '<span class="sk-name">' + s.name + '</span>' + bar +
+        '<span class="sk-lv' + (s.max ? ' max' : '') + '">' + lvText + '</span></li>';
+    });
+    list.innerHTML = html;
+  })();
+
+  /* ============================================================
+     农场日记
+  ============================================================ */
+  var DIARY_KEY = 'stardew_diary';
+  var diary = lsGet(DIARY_KEY, []);
+  function renderDiary() {
+    var list = document.getElementById('diaryList'), html = '';
+    diary.forEach(function (item, i) {
+      html += '<li class="diary-item' + (item.done ? ' done' : '') + '">' +
+        '<button class="chk" data-i="' + i + '" aria-label="完成"></button>' +
+        '<span class="dtxt">' + esc(item.text) + '</span>' +
+        '<button class="del" data-i="' + i + '" aria-label="删除">×</button></li>';
+    });
+    list.innerHTML = html;
+    document.getElementById('diaryEmpty').style.display = diary.length ? 'none' : 'block';
+  }
+  function addDiary() {
+    var input = document.getElementById('diaryInput'), v = input.value.trim();
+    if (!v) return;
+    diary.push({ text: v, done: false });
+    input.value = '';
+    lsSet(DIARY_KEY, diary); renderDiary();
+  }
+  document.getElementById('diaryAdd').addEventListener('click', addDiary);
+  document.getElementById('diaryInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') addDiary(); });
+  document.getElementById('diaryList').addEventListener('click', function (e) {
+    var i = e.target.getAttribute('data-i');
+    if (i === null) return;
+    i = parseInt(i, 10);
+    if (e.target.classList.contains('chk')) diary[i].done = !diary[i].done;
+    else if (e.target.classList.contains('del')) diary.splice(i, 1);
+    lsSet(DIARY_KEY, diary); renderDiary();
+  });
+
+  /* ============================================================
+     联系我：复制邮箱
+  ============================================================ */
+  document.getElementById('copyMail').addEventListener('click', function () {
+    var btn = this, mail = document.getElementById('contactMail').textContent;
+    function done() { btn.textContent = '已复制'; setTimeout(function () { btn.textContent = '复制邮箱'; }, 1500); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(mail).then(done).catch(function () {
+        var ta = document.createElement('textarea'); ta.value = mail;
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch (e) {}
+        document.body.removeChild(ta);
+      });
+    }
+  });
+
+  /* ============================================================
+     弹窗统一开关
+  ============================================================ */
+  var modals = [
+    ['skillsModal', 'skillsBtn', 'closeSkills'],
+    ['aboutModal', 'aboutBtn', 'closeAbout'],
+    ['contactModal', 'contactBtn', 'closeContact'],
+    ['diaryModal', 'diaryBtn', 'closeDiary']
+  ];
+  modals.forEach(function (m) {
+    var win = document.getElementById(m[0]);
+    document.getElementById(m[1]).addEventListener('click', function () { win.hidden = false; });
+    document.getElementById(m[2]).addEventListener('click', function () { win.hidden = true; });
+    win.querySelector('.modal-backdrop').addEventListener('click', function () { win.hidden = true; });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') modals.forEach(function (m) { document.getElementById(m[0]).hidden = true; });
+  });
+
+  /* ============================================================
+     8-bit 芯片音乐（Web Audio 离线生成）
+  ============================================================ */
+  var MELODY = [523.25, 659.25, 783.99, 659.25, 880.00, 783.99, 659.25, 587.33];
+  var BASS   = [261.63, 329.63, 392.00, 329.63, 440.00, 392.00, 329.63, 293.66];
+  var STEP_MS = 300, musicStep = 0, audioCtx = null, musicOn = false, musicTimer = null;
+
+  function playNote(freq, t, type, dur, vol) {
+    var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  function musicTick() {
+    if (!musicOn) return;
+    var t = audioCtx.currentTime;
+    playNote(MELODY[musicStep], t, 'square', 0.26, 0.028);
+    playNote(BASS[musicStep], t, 'triangle', 0.5, 0.045);
+    musicStep = (musicStep + 1) % MELODY.length;
+  }
+  document.getElementById('musicBtn').addEventListener('click', function () {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    musicOn = !musicOn;
+    if (musicOn) { audioCtx.resume(); musicStep = 0; clearInterval(musicTimer); musicTimer = setInterval(musicTick, STEP_MS); }
+    else { clearInterval(musicTimer); }
+    document.body.classList.toggle('music-on', musicOn);
+  });
+
+  /* ============================================================
+     农场日历：季节 / 天气 / 时间
+  ============================================================ */
+  function getSeason() {
+    var m = new Date().getMonth() + 1;
+    if (m >= 3 && m <= 5) return '春';
+    if (m >= 6 && m <= 8) return '夏';
+    if (m >= 9 && m <= 11) return '秋';
+    return '冬';
+  }
+  function getWeather() {
+    var d = new Date(), n = d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate();
+    var list = ['晴', '多云', '微风', '小雨', '晴朗'];
+    return list[n % list.length];
+  }
+  function tickTime() {
+    var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    document.getElementById('fbTime').textContent = p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  document.getElementById('fbSeason').textContent = getSeason();
+  document.getElementById('fbWeather').textContent = getWeather();
+
+  /* ============================================================
+     日间 / 夜间切换
+  ============================================================ */
+  var toggle = document.getElementById('themeToggle');
+  var toggleText = toggle.querySelector('.txt');
+  function setTheme(isNight) {
+    document.body.classList.toggle('night', isNight);
+    toggleText.textContent = isNight ? '开启白天' : '开启夜晚';
+    toggle.setAttribute('aria-pressed', String(isNight));
+  }
+  toggle.addEventListener('click', function () { setTheme(!document.body.classList.contains('night')); });
+
+  /* ============================================================
+     初始化
+  ============================================================ */
+  renderDiary();
+  tickTime();
+  setInterval(tickTime, 30000);
+  setTheme(false); // 初始日间
+</script>
+</body>
+</html>
